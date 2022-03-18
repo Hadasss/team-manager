@@ -1,13 +1,32 @@
 const inquirer = require("inquirer");
 const db = require("./db/connections");
 
-const questions = [];
-
 db.connect((err) => {
   if (err) throw err;
   console.log("connection successful");
   promptUser();
 });
+
+const generateDepartmentsArr = () => {
+  let departArr = [];
+
+  const sqlString = `
+  SELECT * 
+  FROM departments
+  `;
+  return new Promise((resolve, reject) => {
+    db.query(sqlString, (err, rows) => {
+      if (err) {
+        reject(new Error("Oops, something's wrong"));
+      } else {
+        departArr.forEach((department) => {
+          departArr.push(department.department.name);
+        });
+        return departArr;
+      }
+    });
+  });
+};
 
 const promptUser = () => {
   inquirer
@@ -33,10 +52,10 @@ const promptUser = () => {
           viewDept();
           break;
         case "View all roles":
-          // TODO FUNCTION HERE
+          viewRoles();
           break;
         case "View all employees":
-          // TODO FUNCTION HERE
+          viewEmployees();
           break;
         case "Add a department":
           promptAddDepartment();
@@ -59,183 +78,265 @@ const promptUser = () => {
         // default:
         //     console.log("choice picked");
       }
-    });
+    })
+    // .then(() => {
+    //   inquirer.prompt([
+    //     {
+    //       type: "confirm",
+    //       name: "finish",
+    //       message:
+    //         "Would you like to do anything else? If you wish to exit type N.",
+    //       // TODO finish this prompt. not sure about the syntax!
+    //       when: (answers) => {
+    //         if (answers == "y") promptUser();
+    //       },
+    //     },
+    //   ]);
+    // })
+    .catch((err) => console.log(err));
 };
 
 const promptAddDepartment = () => {
-  inquirer.prompt([
-    {
-      type: "input",
-      name: "addDepartment",
-      message: "Type a department name to add to the list",
-      validate: (answers) => {
-        if (answers) {
-          return true;
-        } else {
-          console.log("Please enter department name!");
-          return false;
-        }
-      },
-    },
-  ]);
-};
-
-promptAddRole = () => {
   inquirer
     .prompt([
       {
         type: "input",
-        name: "addRoleTitle",
-        message: "Enter role title",
+        name: "addDepartment",
+        message: "Type a department name to add to the list",
         validate: (answers) => {
           if (answers) {
             return true;
           } else {
-            console.log("Please enter role title!");
-            return false;
-          }
-        },
-      },
-      {
-        type: "input",
-        name: "addRoleSalary",
-        message: "Enter role salary",
-        validate: (answers) => {
-          if (answers) {
-            return true;
-          } else {
-            console.log("Please enter role salary!");
-            return false;
-          }
-        },
-      },
-      {
-        // TODO change type to list, to choose department from list
-        type: "input",
-        name: "addRoleDepartment",
-        message: "Enter department the role will be active in role",
-        validate: (answers) => {
-          if (answers) {
-            return true;
-          } else {
-            console.log("Please enter role department!");
+            console.log("Please enter department name!");
             return false;
           }
         },
       },
     ])
     .then((answers) => {
-      // call addRole();
+      addDept(answers);
+      console.table(answers);
+    });
+};
+
+promptAddRole = () => {
+  generateDepartmentsArr()
+    .then((listArr) => {
+      inquirer.prompt([
+        {
+          type: "input",
+          name: "addRoleTitle",
+          message: "Enter role title",
+          validate: (answers) => {
+            if (answers) {
+              return true;
+            } else {
+              console.log("Please enter role title!");
+              return false;
+            }
+          },
+        },
+        {
+          type: "input",
+          name: "addRoleSalary",
+          message: "Enter role salary",
+          validate: (answers) => {
+            if (answers) {
+              return true;
+            } else {
+              console.log("Please enter role salary!");
+              return false;
+            }
+          },
+        },
+        {
+          type: "list",
+          name: "addRoleDepartment",
+          message: "Choose a department the role will be active in role",
+          // TODO add functionality to pull departments from db
+          choices: listArr,
+          validate: (answers) => {
+            if (answers) {
+              return true;
+            } else {
+              console.log("Please enter role department!");
+              return false;
+            }
+          },
+        },
+      ]);
+    })
+    .then((answers) => {
       addRole(answers);
     });
 };
 
 promptAddEmployee = () => {
-  inquirer.prompt([
-    {
-      type: "input",
-      name: "addEmployee",
-      message: "Type employee's first name",
-      // when: (answers) => {
-      //   if (answers.options == "Add employee") {
-      //     return true;
-      //   }
-      // },
-      validate: (answers) => {
-        if (answers) {
-          return true;
-        } else {
-          console.log("Please enter employee's first name!");
-          return false;
-        }
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "addEmployee",
+        message: "Type employee's first name",
+        validate: (answers) => {
+          if (answers) {
+            return true;
+          } else {
+            console.log("Please enter employee's first name!");
+            return false;
+          }
+        },
       },
-    },
-    {
-      type: "input",
-      name: "addEmployeeLastName",
-      message: "Type employee's last name",
-      // when: (answers) => {
-      //   if (answers.addEmployee) {
-      //     return true;
-      //   }
-      // },
-      validate: (answers) => {
-        if (answers) {
-          return true;
-        } else {
-          console.log("Please enter employee's last name!");
-          return false;
-        }
+      {
+        type: "input",
+        name: "addEmployeeLastName",
+        message: "Type employee's last name",
+        validate: (answers) => {
+          if (answers) {
+            return true;
+          } else {
+            console.log("Please enter employee's last name!");
+            return false;
+          }
+        },
       },
-    },
-    {
-      type: "input",
-      name: "addEmployeeRole",
-      message: "Type employee's role title",
-      // when: (answers) => {
-      //   if (answers.addEmployeeLastName) {
-      //     return true;
-      //   }
-      // },
-      validate: (answers) => {
-        if (answers) {
-          return true;
-        } else {
-          console.log("Please enter employee's role title!");
-          return false;
-        }
+      {
+        type: "input",
+        name: "addEmployeeRole",
+        message: "Type employee's role title",
+        // TODO change to list, choose role from list
+        validate: (answers) => {
+          if (answers) {
+            return true;
+          } else {
+            console.log("Please enter employee's role title!");
+            return false;
+          }
+        },
       },
-    },
-    {
-      type: "input",
-      name: "addEmployeeManager",
-      message: "Type employee's manager",
-      // when: (answers) => {
-      //   if (answers.addEmployeeRole) {
-      //     return true;
-      //   }
-      // },
-      validate: (answers) => {
-        if (answers) {
-          return true;
-        } else {
-          console.log("Please enter employee's manager!");
-          return false;
-        }
+      {
+        type: "input",
+        name: "addEmployeeManager",
+        message: "Type employee's manager",
+        // TODO change to list - choose manager from list of employees
+        validate: (answers) => {
+          if (answers) {
+            return true;
+          } else {
+            console.log("Please enter employee's manager!");
+            return false;
+          }
+        },
       },
-    },
-  ]);
+    ])
+    .then((answers) => {
+      addEmployee(answers);
+    });
 };
 
 promptUpdateEmployee = () => {
-  inquirer.prompt([
-    {
-      type: "input",
-      name: "updateEmployee",
-      message: "Type employee's updated role title",
-      // when: (answers) => {
-      //   if (answers.options == "Update employee role") {
-      //     return true;
-      //   }
-      // },
-      validate: (answers) => {
-        if (answers) {
-          return true;
-        } else {
-          console.log("Please enter employee's updated role title!");
-          return false;
-        }
+  inquirer
+    .prompt([
+      {
+        type: "list",
+        name: "chooseEmployee",
+        message: "Choose employee to update",
+        choices: [
+          // TODO add list of employees
+        ],
+        validate: (answers) => {
+          if (answers) {
+            return true;
+          } else {
+            console.log("Please enter employee's updated role title!");
+            return false;
+          }
+        },
       },
-    },
-  ]);
+      {
+        type: "list",
+        name: "updateEmployeeRole",
+        message: "Type employee's updated role title",
+        choices: [
+          // TODO add list of roles
+        ],
+        validate: (answers) => {
+          if (answers) {
+            return true;
+          } else {
+            console.log("Please enter employee's updated role title!");
+            return false;
+          }
+        },
+      },
+    ])
+    .then((answers) => {
+      updateEmployee(answers);
+    });
 };
 
-// create function to use sql query to add role
+function viewDept() {
+  const sqlString = `
+      SELECT *
+      FROM departments
+      `;
+
+  db.query(sqlString, (err, rows) => {
+    if (err) console.log(err);
+    console.log(rows);
+    console.table(rows);
+  });
+}
+
+function viewRoles() {
+  // TODO change department id to department name
+  const sqlString = `
+  SELECT *
+  FROM roles
+  `;
+  // LEFT JOIN departments
+  // ON roles.department_id = departments.name
+
+  db.query(sqlString, (err, rows) => {
+    if (err) console.log(err);
+    console.table(rows);
+  });
+}
+
+function viewEmployees() {
+  // TODO change role id to role name
+  // TODO change manager id to
+  const sqlString = `
+  SELECT *
+  FROM employees`;
+
+  db.query(sqlString, (err, rows) => {
+    if (err) console.log(err);
+    console.table(rows);
+  });
+}
+
+function addDept(answers) {
+  const sqlString = `
+    INSERT INTO departments(name)
+    VALUES (?)
+    `;
+
+  db.query(sqlString, answers.addDepartment, (err, row) => {
+    if (err) console.log(err);
+    // console.log(row);
+    // console.table(row);
+  });
+}
+
 function addRole(obj) {
   const sqlString = `
     INSERT INTO roles(job_title, salary, department_id)
     VALUES (?, ?, ?)
     `;
+
+  // TODO add a departments array for list in prompt
+
   db.query(
     sqlString,
     [obj.addRoleTitle, obj.addRoleSalary, obj.addRoleDepartment],
@@ -247,19 +348,34 @@ function addRole(obj) {
   );
 }
 
-function viewDept() {
+function addEmployee(answers) {
+  // TODO change manager id to manager name
+  // BUG doesn't recognize job_title column because it's a different table.
   const sqlString = `
-    SELECT *
-    FROM departments
+    INSERT INTO employees(first_name, last_name, job_title, manager_id)
+    VALUES (?, ?, ?, ?)
     `;
 
-  db.query(sqlString, (err, rows) => {
-    if (err) {
-      console.log(err);
+  db.query(
+    sqlString,
+    [
+      answers.addEmployee,
+      answers.addEmployeeLastName,
+      answers.addEmployeeRole,
+      answers.addEmployeeManager,
+    ],
+    (err, row) => {
+      if (err) console.log(err);
+      console.log(row);
+      console.table(row);
     }
-    console.log(rows);
-    console.table(rows);
-  });
+  );
 }
 
-// TODO create functions to other prompts
+// TODO updateEmployee function
+function updateEmployee() {
+  const sqlString = `
+  UPDATE employees
+  WHERE 
+    `;
+}
