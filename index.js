@@ -87,8 +87,6 @@ const promptAddDepartment = () => {
     .catch((err) => console.log(err));
 };
 const promptAddRole = () => {
-  // generateDepartmentsArr()
-  //   .then((listArr) => {
   inquirer
     .prompt([
       {
@@ -121,9 +119,14 @@ const promptAddRole = () => {
         type: "list",
         name: "addRoleDepartment",
         message: "Choose a department the role will be active in role",
-        // TODO add functionality to pull departments from db
-        // choices: listArr,
-        choices: ["1", "2", "3", "4", "5", "6"],
+        choices: [
+          "1: Finance",
+          "2: Engineering",
+          "3: HR",
+          "4: Sales",
+          "5: Legal",
+          "6: Marketing",
+        ],
         validate: (answers) => {
           if (answers) {
             return true;
@@ -134,7 +137,6 @@ const promptAddRole = () => {
         },
       },
     ])
-    // })
     .then((answers) => {
       addRole(answers);
       console.table(answers);
@@ -214,21 +216,6 @@ const promptAddEmployee = () => {
     .catch((err) => console.log(err));
 };
 const promptUpdateEmployee = () => {
-  // function generateEmployeeArr() {
-  //   const employeesArrSql = `
-  //   SELECT *
-  //   FROM employees
-  //   `;
-  //   db.query(employeesArrSql, (err, rows) => {
-  //     if (err) console.log(err);
-  //     for (let i = 0; i < rows.length; i++) {
-  //       employeesArr.push(rows[i].last_name);
-  //     }
-  //     return employeesArr;
-  //   });
-  //   console.log(employeesArr);
-  // }
-
   inquirer
     .prompt([
       {
@@ -236,7 +223,6 @@ const promptUpdateEmployee = () => {
         name: "chooseEmployee",
         message: "Choose employee to update",
         choices: [1, 2, 3, 4],
-        // TODO generate list for all updated employees,
         validate: (answers) => {
           if (answers) {
             return true;
@@ -247,9 +233,10 @@ const promptUpdateEmployee = () => {
         },
       },
       {
-        type: "input",
+        type: "list",
         name: "updateEmployeeRole",
-        message: "Type employee's updated role title",
+        message: "Choose employee's updated role title by ID",
+        choices: [1, 2, 3, 4, 5, 6, 7, 8],
         validate: (answers) => {
           if (answers) {
             return true;
@@ -294,13 +281,12 @@ function viewRoles() {
   promptUser();
 }
 function viewEmployees() {
-  // TODO change manager id to employee name
   const sqlString = `
-  SELECT employees.*, roles.role_title 
-  AS role_title
-  FROM employees
-  LEFT JOIN roles 
-  ON employees.role_id = roles.id
+  SELECT employees.*, roles.role_title AS role_title,
+  departments.name AS department
+  FROM employees, roles, departments
+  WHERE employees.role_id = roles.id
+  AND department_id = departments.id
   `;
 
   db.query(sqlString, (err, rows) => {
