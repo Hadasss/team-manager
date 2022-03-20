@@ -1,32 +1,11 @@
 const inquirer = require("inquirer");
-const db = require("./db/connections");
+const db = require("./config/connections");
 
 db.connect((err) => {
   if (err) throw err;
   console.log("connection successful");
   promptUser();
 });
-
-const generateDepartmentsArr = () => {
-  let departArr = [];
-
-  const sqlString = `
-  SELECT * 
-  FROM departments
-  `;
-  return new Promise((resolve, reject) => {
-    db.query(sqlString, (err, rows) => {
-      if (err) {
-        reject(new Error("Oops, something's wrong"));
-      } else {
-        departArr.forEach((department) => {
-          departArr.push(department.department.name);
-        });
-        return departArr;
-      }
-    });
-  });
-};
 
 const promptUser = () => {
   inquirer
@@ -43,6 +22,8 @@ const promptUser = () => {
           "Add a role",
           "Add employee",
           "Update employee role",
+          "View department budget",
+          "Exit",
         ],
       },
     ])
@@ -65,37 +46,22 @@ const promptUser = () => {
         case "Add a role":
           promptAddRole();
           break;
-        // default:
-        //     console.log("choice picked");
         case "Add employee":
           promptAddEmployee();
           break;
-        // default:
-        //     console.log("choice picked");
         case "Update employee role":
           promptUpdateEmployee();
           break;
-        // default:
-        //     console.log("choice picked");
+        case "View department budget":
+          viewDeptBudget();
+          break;
+        case "Exit":
+          db.end();
+          break;
       }
     })
-    // .then(() => {
-    //   inquirer.prompt([
-    //     {
-    //       type: "confirm",
-    //       name: "finish",
-    //       message:
-    //         "Would you like to do anything else? If you wish to exit type N.",
-    //       // TODO finish this prompt. not sure about the syntax!
-    //       when: (answers) => {
-    //         if (answers == "y") promptUser();
-    //       },
-    //     },
-    //   ]);
-    // })
     .catch((err) => console.log(err));
 };
-
 const promptAddDepartment = () => {
   inquirer
     .prompt([
@@ -116,62 +82,67 @@ const promptAddDepartment = () => {
     .then((answers) => {
       addDept(answers);
       console.table(answers);
-    });
-};
-
-promptAddRole = () => {
-  generateDepartmentsArr()
-    .then((listArr) => {
-      inquirer.prompt([
-        {
-          type: "input",
-          name: "addRoleTitle",
-          message: "Enter role title",
-          validate: (answers) => {
-            if (answers) {
-              return true;
-            } else {
-              console.log("Please enter role title!");
-              return false;
-            }
-          },
-        },
-        {
-          type: "input",
-          name: "addRoleSalary",
-          message: "Enter role salary",
-          validate: (answers) => {
-            if (answers) {
-              return true;
-            } else {
-              console.log("Please enter role salary!");
-              return false;
-            }
-          },
-        },
-        {
-          type: "list",
-          name: "addRoleDepartment",
-          message: "Choose a department the role will be active in role",
-          // TODO add functionality to pull departments from db
-          choices: listArr,
-          validate: (answers) => {
-            if (answers) {
-              return true;
-            } else {
-              console.log("Please enter role department!");
-              return false;
-            }
-          },
-        },
-      ]);
     })
+    .then((answers) => promptUser(answers))
+    .catch((err) => console.log(err));
+};
+const promptAddRole = () => {
+  // generateDepartmentsArr()
+  //   .then((listArr) => {
+  inquirer
+    .prompt([
+      {
+        type: "input",
+        name: "addRoleTitle",
+        message: "Enter role title",
+        validate: (answers) => {
+          if (answers) {
+            return true;
+          } else {
+            console.log("Please enter role title!");
+            return false;
+          }
+        },
+      },
+      {
+        type: "input",
+        name: "addRoleSalary",
+        message: "Enter role salary",
+        validate: (answers) => {
+          if (answers) {
+            return true;
+          } else {
+            console.log("Please enter role salary!");
+            return false;
+          }
+        },
+      },
+      {
+        type: "list",
+        name: "addRoleDepartment",
+        message: "Choose a department the role will be active in role",
+        // TODO add functionality to pull departments from db
+        // choices: listArr,
+        choices: ["1", "2", "3", "4", "5", "6"],
+        validate: (answers) => {
+          if (answers) {
+            return true;
+          } else {
+            console.log("Please enter role department!");
+            return false;
+          }
+        },
+      },
+    ])
+    // })
     .then((answers) => {
       addRole(answers);
-    });
+      console.table(answers);
+    })
+    .then((answers) => promptUser(answers))
+    .catch((err) => console.log(err));
 };
-
-promptAddEmployee = () => {
+const promptAddEmployee = () => {
   inquirer
     .prompt([
       {
@@ -203,7 +174,7 @@ promptAddEmployee = () => {
       {
         type: "input",
         name: "addEmployeeRole",
-        message: "Type employee's role title",
+        message: "Type employee's role id",
         // TODO change to list, choose role from list
         validate: (answers) => {
           if (answers) {
@@ -216,50 +187,69 @@ promptAddEmployee = () => {
       },
       {
         type: "input",
-        name: "addEmployeeManager",
-        message: "Type employee's manager",
-        // TODO change to list - choose manager from list of employees
+        name: "addEmployeeSalary",
+        message: "Type employee's salary",
         validate: (answers) => {
           if (answers) {
             return true;
           } else {
-            console.log("Please enter employee's manager!");
+            console.log("Please enter employee's salary!");
             return false;
           }
         },
       },
+      {
+        type: "input",
+        name: "addEmployeeManager",
+        message: "Type employee's manager",
+        // TODO change to list - choose manager from list of employees
+        default: false,
+      },
     ])
     .then((answers) => {
       addEmployee(answers);
-    });
+      console.table(answers);
+    })
+    .then((answers) => promptUser(answers))
+    .catch((err) => console.log(err));
 };
+const promptUpdateEmployee = () => {
+  // function generateEmployeeArr() {
+  //   const employeesArrSql = `
+  //   SELECT *
+  //   FROM employees
+  //   `;
+  //   db.query(employeesArrSql, (err, rows) => {
+  //     if (err) console.log(err);
+  //     for (let i = 0; i < rows.length; i++) {
+  //       employeesArr.push(rows[i].last_name);
+  //     }
+  //     return employeesArr;
+  //   });
+  //   console.log(employeesArr);
+  // }
 
-promptUpdateEmployee = () => {
   inquirer
     .prompt([
       {
         type: "list",
         name: "chooseEmployee",
         message: "Choose employee to update",
-        choices: [
-          // TODO add list of employees
-        ],
+        choices: [1, 2, 3, 4],
+        // TODO generate list for all updated employees,
         validate: (answers) => {
           if (answers) {
             return true;
           } else {
-            console.log("Please enter employee's updated role title!");
+            console.log("Please choose an employee to updated!");
             return false;
           }
         },
       },
       {
-        type: "list",
+        type: "input",
         name: "updateEmployeeRole",
         message: "Type employee's updated role title",
-        choices: [
-          // TODO add list of roles
-        ],
         validate: (answers) => {
           if (answers) {
             return true;
@@ -272,50 +262,53 @@ promptUpdateEmployee = () => {
     ])
     .then((answers) => {
       updateEmployee(answers);
-    });
+      console.table(answers);
+    })
+    .then(() => promptUser())
+    .catch((err) => console.log(err));
 };
-
 function viewDept() {
   const sqlString = `
       SELECT *
       FROM departments
       `;
-
   db.query(sqlString, (err, rows) => {
     if (err) console.log(err);
-    console.log(rows);
     console.table(rows);
   });
+  promptUser();
 }
-
 function viewRoles() {
-  // TODO change department id to department name
   const sqlString = `
-  SELECT *
+  SELECT roles.*, departments.name
+  AS department_id
   FROM roles
+  LEFT JOIN departments
+  ON roles.department_id = departments.id
   `;
-  // LEFT JOIN departments
-  // ON roles.department_id = departments.name
 
   db.query(sqlString, (err, rows) => {
     if (err) console.log(err);
     console.table(rows);
   });
+  promptUser();
 }
-
 function viewEmployees() {
-  // TODO change role id to role name
-  // TODO change manager id to
+  // TODO change manager id to employee name
   const sqlString = `
-  SELECT *
-  FROM employees`;
+  SELECT employees.*, roles.role_title 
+  AS role_title
+  FROM employees
+  LEFT JOIN roles 
+  ON employees.role_id = roles.id
+  `;
 
   db.query(sqlString, (err, rows) => {
     if (err) console.log(err);
     console.table(rows);
   });
+  promptUser();
 }
-
 function addDept(answers) {
   const sqlString = `
     INSERT INTO departments(name)
@@ -324,58 +317,69 @@ function addDept(answers) {
 
   db.query(sqlString, answers.addDepartment, (err, row) => {
     if (err) console.log(err);
-    // console.log(row);
     // console.table(row);
   });
 }
-
-function addRole(obj) {
+function addRole(answers) {
   const sqlString = `
-    INSERT INTO roles(job_title, salary, department_id)
+    INSERT INTO roles(role_title, salary, department_id)
     VALUES (?, ?, ?)
     `;
 
-  // TODO add a departments array for list in prompt
-
   db.query(
     sqlString,
-    [obj.addRoleTitle, obj.addRoleSalary, obj.addRoleDepartment],
+    [answers.addRoleTitle, answers.addRoleSalary, answers.addRoleDepartment],
     (err, row) => {
       if (err) console.log(err);
-      console.log(row);
-      console.table(row);
+      // console.table(row);
     }
   );
 }
-
 function addEmployee(answers) {
   // TODO change manager id to manager name
-  // BUG doesn't recognize job_title column because it's a different table.
   const sqlString = `
-    INSERT INTO employees(first_name, last_name, job_title, manager_id)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO employees(first_name, last_name, role_id, salary, manager_id)
+    VALUES (?, ?, ?, ?, ?)
     `;
-
-  db.query(
-    sqlString,
-    [
-      answers.addEmployee,
-      answers.addEmployeeLastName,
-      answers.addEmployeeRole,
-      answers.addEmployeeManager,
-    ],
-    (err, row) => {
-      if (err) console.log(err);
-      console.log(row);
-      console.table(row);
-    }
-  );
+  const params = [
+    answers.addEmployee,
+    answers.addEmployeeLastName,
+    answers.addEmployeeRole,
+    answers.addEmployeeSalary,
+    answers.addEmployeeManager,
+  ];
+  db.query(sqlString, params, (err, row) => {
+    if (err) console.log(err);
+    // console.table(row);
+  });
 }
-
-// TODO updateEmployee function
-function updateEmployee() {
+function updateEmployee(answers) {
   const sqlString = `
   UPDATE employees
-  WHERE 
+  SET employees.role_id = ?
+  WHERE id = ?
     `;
+  const params = [answers.updateEmployeeRole, answers.chooseEmployee];
+
+  db.query(sqlString, params, (err, row) => {
+    if (err) console.log(err);
+  });
+}
+function viewDeptBudget() {
+  const sqlString = `
+  SELECT departments.id AS id, 
+  departments.name AS department,
+  SUM(salary) 
+  AS budget
+  FROM roles  
+  INNER JOIN departments 
+  ON roles.department_id = departments.id 
+  GROUP BY roles.department_id
+  `;
+
+  db.query(sqlString, (err, rows) => {
+    if (err) console.log(err);
+    console.table(rows);
+  });
+  promptUser();
 }

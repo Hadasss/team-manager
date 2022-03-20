@@ -1,17 +1,18 @@
-const express = require("express");
-const inquirer = require("inquirer");
-const mysql = require("mysql2");
-const db = require("./db/connections");
+// const express = require("express");
+// const inquirer = require("inquirer");
+// const mysql = require("mysql2");
 
-const PORT = process.env.PORT || 3003;
-const app = express();
+// const db = require("./db/connections");
 
-// express middleware
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// const PORT = process.env.PORT || 3003;
+// const app = express();
 
-// API routes here
+// // express middleware
+// app.use(express.urlencoded({ extended: true }));
+// app.use(express.json());
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// // API routes here
+
+// app.listen(PORT, () => {
+//   console.log(`Server running on port ${PORT}`);
+// });

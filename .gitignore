@@ -1,2 +1,4 @@
 .DS_Dtore
 node_modules
+.env
+/db/index.js
